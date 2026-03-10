@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  recipe-store:
+    build: .
+    container_name: recipe-store
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - recipe-data:/app/data
+    environment:
+      - APP_PASSWORD=${APP_PASSWORD:-recipes}
+      - JWT_SECRET=${JWT_SECRET:-change-me-to-a-random-string}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DB_PATH=/app/data/recipes.db
+      - UPLOADS_DIR=/app/data/uploads
+      - PORT=3000
+    labels:
+      # Unraid web UI label - click container icon to open web UI
+      net.unraid.docker.webui: "http://[IP]:[PORT:3000]"
+      net.unraid.docker.icon: "https://raw.githubusercontent.com/narendraparihar/recipe-store/main/icon.png"
+
+volumes:
+  recipe-data:
+    driver: local
