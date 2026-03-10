@@ -10,6 +10,7 @@ import { login, logout, checkAuth, requireAuth } from "./auth.js";
 import {
   extractRecipeFromUrl,
   extractRecipeFromImage,
+  extractRecipeFromMultipleImages,
   extractRecipeFromText,
   extractRecipeFromYouTube,
   isYouTubeUrl,
@@ -205,13 +206,23 @@ app.post("/api/import/url", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/api/import/image", requireAuth, importUpload.single("image"), async (req, res) => {
+app.post("/api/import/image", requireAuth, importUpload.array("images", 10), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Image is required" });
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) return res.status(400).json({ error: "At least one image is required" });
 
-    const base64 = req.file.buffer.toString("base64");
-    const mimeType = req.file.mimetype;
-    const extracted = await extractRecipeFromImage(base64, mimeType);
+    let extracted;
+    if (files.length === 1) {
+      const base64 = files[0].buffer.toString("base64");
+      const mimeType = files[0].mimetype;
+      extracted = await extractRecipeFromImage(base64, mimeType);
+    } else {
+      const images = files.map((f) => ({
+        base64: f.buffer.toString("base64"),
+        mimeType: f.mimetype,
+      }));
+      extracted = await extractRecipeFromMultipleImages(images);
+    }
     res.json(extracted);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

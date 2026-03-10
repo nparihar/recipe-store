@@ -76,9 +76,11 @@ export const api = {
   import: {
     fromUrl: (url: string) =>
       request<any>("/import/url", { method: "POST", body: JSON.stringify({ url }) }),
-    fromImage: async (file: File) => {
+    fromImages: async (files: File[]) => {
       const formData = new FormData();
-      formData.append("image", file);
+      for (const file of files) {
+        formData.append("images", file);
+      }
       const res = await fetch(`${BASE}/import/image`, {
         method: "POST",
         credentials: "include",

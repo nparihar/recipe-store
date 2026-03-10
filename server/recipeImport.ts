@@ -7,7 +7,7 @@ function getModel() {
     throw new Error("GEMINI_API_KEY is not configured. Set it in your environment variables.");
   }
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 }
 
 const RECIPE_EXTRACTION_PROMPT = `You are a recipe extraction assistant. Extract the recipe from the provided content and return a JSON object with these exact fields:
@@ -76,6 +76,27 @@ export async function extractRecipeFromImage(imageBase64: string, mimeType: stri
     },
   ]);
 
+  const text = result.response.text();
+  return parseRecipeJson(text);
+}
+
+export async function extractRecipeFromMultipleImages(images: { base64: string; mimeType: string }[]) {
+  const model = getModel();
+
+  const parts: any[] = [
+    RECIPE_EXTRACTION_PROMPT + "\n\nThe recipe is split across multiple images/photos. Combine all the information from all images into a single complete recipe.",
+  ];
+
+  for (let i = 0; i < images.length; i++) {
+    parts.push({
+      inlineData: {
+        data: images[i].base64,
+        mimeType: images[i].mimeType,
+      },
+    });
+  }
+
+  const result = await model.generateContent(parts);
   const text = result.response.text();
   return parseRecipeJson(text);
 }
