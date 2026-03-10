@@ -4,6 +4,17 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "recipe-store-default-secret-change-me";
 const APP_PASSWORD = process.env.APP_PASSWORD || "recipes";
 
+function getCookieOptions(req: Request) {
+  const isSecure = req.secure || req.headers["x-forwarded-proto"] === "https";
+  return {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: "lax" as const,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: "/",
+  };
+}
+
 export function login(req: Request, res: Response) {
   const { password } = req.body;
 
@@ -13,19 +24,13 @@ export function login(req: Request, res: Response) {
 
   const token = jwt.sign({ authenticated: true }, JWT_SECRET, { expiresIn: "30d" });
 
-  res.cookie("recipe_token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    path: "/",
-  });
+  res.cookie("recipe_token", token, getCookieOptions(req));
 
   return res.json({ success: true });
 }
 
-export function logout(_req: Request, res: Response) {
-  res.clearCookie("recipe_token", { path: "/" });
+export function logout(req: Request, res: Response) {
+  res.clearCookie("recipe_token", getCookieOptions(req));
   return res.json({ success: true });
 }
 

@@ -19,6 +19,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
+// Trust reverse proxy (Nginx, Cloudflare) so Express sees the correct protocol
+app.set("trust proxy", 1);
+
 // Uploads directory (persisted via Docker volume)
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), "data", "uploads");
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
